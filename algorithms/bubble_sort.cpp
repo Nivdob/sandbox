@@ -33,6 +33,16 @@ namespace
 		}
 	}
 
+	void read_file(const char *const name, std::vector<int> *const v)
+	{
+		FILE *const f = fopen(name, "r");
+		if (0 != f)
+		{
+			read_file(f, v);
+			fclose(f);
+		}
+	}
+
 	void write_file(FILE *const f, const std::vector<int> *const v)
 	{
 		if (!v->empty())
@@ -50,10 +60,11 @@ namespace
 	{
 		const auto b = v->begin();
 		auto e = v->end();
-		for(bool sorted = v->empty(); !sorted; --e)
+		for(bool sorted = b == e; !sorted;)
 		{
 			sorted = true;
-			for (auto i = b, j = b + 1; e != j; i = j++)
+			auto i = b, j = b + 1;
+			for (; e != j; i = j++)
 			{
 				if (*i > *j)
 				{
@@ -61,18 +72,38 @@ namespace
 					sorted = false;
 				}
 			}
+			e = i;
+		}
+	}
+
+	void insertion_sort(std::vector<int> *const v)
+	{
+		std::vector<int> &u = *v;
+		for (size_t i = 1; v->size() > i; ++i)
+		{
+			int x = u[i];
+			for (size_t j = i; 0 < j-- && u[j] > x;)
+			{
+				u[j + 1] = u[j];
+				u[j] = x;
+			}
 		}
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	(void)argc; (void)argv;
-	FILE *const f = fopen(argv[1], "r");
 	std::vector<int> v;
-	read_file(f, &v);
-	fclose(f);
-	bubble_sort(&v);
+	if (1 < argc)
+	{
+		read_file(argv[1], &v);
+	}
+	else
+	{
+		read_file(stdin, &v);
+	}
+	//bubble_sort(&v);
+	insertion_sort(&v);
 	write_file(stderr, &v);
 	return 0;
 }
