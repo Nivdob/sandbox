@@ -21,6 +21,6 @@ namespace
 
 int main(int argc, char *argv[])
 {
-	return test_sort_main(argc, argv, insertion_sort, "insertion_sort");
+	return test_sort_main(argc, argv, {{insertion_sort, "insertion_sort"}});
 }
 

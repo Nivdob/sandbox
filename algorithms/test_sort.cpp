@@ -17,6 +17,8 @@ namespace
 		{{42}, {42}},
 		{{1, 3, 2}, {1, 2, 3}},
 		{{2, 3, 1, 4}, {1, 2, 3, 4}},
+		{{0, 3, 9, 8, 5}, {0, 3, 5, 8, 9}},
+		{{0, 3, 9, 8, 6, 5}, {0, 3, 5, 6, 8, 9}},
 		{{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
 		{{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
 		{{1, 1, 9, 9, 0, 2, 3, 4, 3, 2}, {0, 1, 1, 2, 2, 3, 3, 4, 9, 9}},
@@ -24,42 +26,49 @@ namespace
 	};
 }
 
-bool test_sort(void (*f)(std::vector<int> *v), const char *const name)
+bool test_sort(const std::initializer_list<test_sort_item> items)
 {
-	for (size_t i = 0; _countof(c_test_cases) > i; ++i)
+	for(auto i = items.begin(), e = items.end(); e != i; ++i)
 	{
-		const test_case &tc = c_test_cases[i];
-		std::vector<int> v = tc.input;
-		f(&v);
-		if (tc.output != v)
+		for (size_t k = 0; _countof(c_test_cases) > k; ++k)
 		{
-			std::fprintf(stderr, "%s: test case #%zu failed\n",
-						 0 != name? name: "sort", i);
-			std::fprintf(stderr, "\tInput:\n\t");
-			array_write(stderr, &tc.input);
-			std::fprintf(stderr, "\tExpected output:\n\t");
-			array_write(stderr, &tc.output);
-			std::fprintf(stderr, "\tActual output:\n\t");
-			array_write(stderr, &v);
-			return false;
+			const test_case &tc = c_test_cases[k];
+			std::vector<int> v = tc.input;
+			i->f(&v);
+			if (tc.output != v)
+			{
+				std::fprintf(stderr, "%s: test case #%zu failed\n",
+							 0 != i->name? i->name: "sort", k);
+				std::fprintf(stderr, "\tInput:\n\t");
+				array_write(stderr, &tc.input);
+				std::fprintf(stderr, "\tExpected output:\n\t");
+				array_write(stderr, &tc.output);
+				std::fprintf(stderr, "\tActual output:\n\t");
+				array_write(stderr, &v);
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
 int test_sort_main(int argc, char *argv[],
-				   void (*f)(std::vector<int> *v), const char *const name)
+				   const std::initializer_list<test_sort_item> items)
 {
 	if (2 == argc)
 	{
 		if (0 == strcmp("test", argv[1]))
 		{
-			return test_sort(f, name)? 0: -1;
+			return test_sort(items)? 0: -1;
 		}
 		std::vector<int> v;
 		array_read(argv[1], &v);
-		f(&v);
-		array_write(stdout, &v);
+		for(auto i = items.begin(), e = items.end(); e != i; ++i)
+		{
+			std::vector<int> u = v;
+			i->f(&v);
+			array_write(stdout, &u);
+		}
 		return 0;
 	}
 	return -1;

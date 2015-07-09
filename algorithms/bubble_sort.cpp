@@ -26,5 +26,5 @@ namespace
 
 int main(int argc, char *argv[])
 {
-	return test_sort_main(argc, argv, bubble_sort, "bubble_sort");
+	return test_sort_main(argc, argv, {{bubble_sort, "bubble_sort"}});
 }
