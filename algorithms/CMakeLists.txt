@@ -15,3 +15,7 @@ add_test(NAME insertion_sort COMMAND insertion_sort test)
 add_executable(merge_sort merge_sort.cpp)
 target_link_libraries(merge_sort utils test_sort)
 add_test(NAME merge_sort COMMAND merge_sort test)
+
+add_executable(quick_sort quick_sort.cpp)
+target_link_libraries(quick_sort utils test_sort)
+add_test(NAME quick_sort COMMAND quick_sort test)
