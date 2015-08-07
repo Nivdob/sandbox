@@ -30,6 +30,7 @@ namespace
 
 bool test_sort(const std::initializer_list<test_sort_item> items)
 {
+	bool ok = true;
 	for(auto i = items.begin(), e = items.end(); e != i; ++i)
 	{
 		for (size_t k = 0; _countof(c_test_cases) > k; ++k)
@@ -47,11 +48,11 @@ bool test_sort(const std::initializer_list<test_sort_item> items)
 				array_write(stderr, &tc.output);
 				std::fprintf(stderr, "\tActual output:\n\t");
 				array_write(stderr, &v);
-				return false;
+				ok = false;
 			}
 		}
 	}
-	return true;
+	return ok;
 }
 
 int test_sort_main(int argc, char *argv[],

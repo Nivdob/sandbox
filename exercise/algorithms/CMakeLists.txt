@@ -23,3 +23,7 @@ add_test(NAME merge_sort COMMAND merge_sort test)
 add_executable(quick_sort quick_sort.cpp)
 target_link_libraries(quick_sort utils test_sort)
 add_test(NAME quick_sort COMMAND quick_sort test)
+
+add_executable(heap_sort heap_sort.cpp)
+target_link_libraries(heap_sort utils test_sort)
+add_test(NAME heap_sort COMMAND heap_sort test)

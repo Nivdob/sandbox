@@ -1,3 +1,3 @@
-/build.*
-/CMakeLists.txt.user
-/tags
+/exercise/build.*
+/exercise/CMakeLists.txt.user
+tags
