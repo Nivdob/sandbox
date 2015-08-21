@@ -27,3 +27,7 @@ add_test(NAME quick_sort COMMAND quick_sort test)
 add_executable(heap_sort heap_sort.cpp)
 target_link_libraries(heap_sort utils test_sort)
 add_test(NAME heap_sort COMMAND heap_sort test)
+
+add_executable(boyer_moore boyer_moore.cpp)
+target_link_libraries(boyer_moore utils)
+add_test(NAME boyer_moore COMMAND boyer_moore test)
