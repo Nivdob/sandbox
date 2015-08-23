@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os.path
+import itertools
 
 def read_fastq(filename):
 	sequences = []
@@ -223,3 +224,115 @@ def overlap_graph(reads, k=3):
 		if 0 < matches:
 			n += 1
 	return graph, n
+
+def scs(ss):
+	""" Returns shortest common superstring of given
+		strings, which must be the same length """
+	shortest_sup = None
+	options = []
+	for ssperm in itertools.permutations(ss):
+		sup = ssperm[0]  # superstring starts as first string
+		for i in range(len(ss)-1):
+			# overlap adjacent strings A and B in the permutation
+			olen = overlap(ssperm[i], ssperm[i+1], min_length=1)
+			# add non-overlapping portion of B to superstring
+			sup += ssperm[i+1][olen:]
+		if shortest_sup is None or len(sup) < len(shortest_sup):
+			options = [sup]
+			shortest_sup = sup	# found shorter superstring
+		elif len(sup) == len(shortest_sup):
+			options.append(sup)
+	return shortest_sup, options
+
+def pick_maximal_overlap(reads, k):
+	""" Return a pair of reads from the list with a
+		maximal suffix/prefix overlap >= k.  Returns
+		overlap length 0 if there are no such overlaps."""
+	reada, readb = None, None
+	best_olen = 0
+	for a, b in itertools.permutations(reads, 2):
+		olen = overlap(a, b, min_length=k)
+		if olen > best_olen:
+			reada, readb = a, b
+			best_olen = olen
+	return reada, readb, best_olen
+
+def greedy_scs(reads, k):
+	""" Greedy shortest-common-superstring merge.
+		Repeat until no edges (overlaps of length >= k)
+		remain. """
+	read_a, read_b, olen = pick_maximal_overlap(reads, k)
+	while olen > 0:
+		reads.remove(read_a)
+		reads.remove(read_b)
+		reads.append(read_a + read_b[olen:])
+		read_a, read_b, olen = pick_maximal_overlap(reads, k)
+	return ''.join(reads)
+
+class assembly_index(object):
+	def __init__(self, reads, k):
+		self.k = k
+		self.index = {}
+		for i in range(len(reads)):
+			r = reads[i]
+			for p in range(len(r) - self.k + 1):
+				kmer = r[p:p + self.k]
+				self.index.setdefault(kmer, []).append((i, p))
+
+	def remove(self, r, j):
+		for p in range(len(r) - self.k + 1):
+			kmer = r[p:p + self.k]
+			ps = self.index.get(kmer, None)
+			if ps is None:
+				continue
+			ps_new = filter(lambda x: x[0] != j, ps)
+			if 0 < len(ps_new):
+				self.index[kmer] = ps_new
+			else:
+				self.index.pop(kmer, None)
+
+	def add(self, r, j):
+		for p in range(len(r) - self.k + 1):
+			kmer = r[p:p + self.k]
+			self.index.setdefault(kmer, []).append((j, p))
+
+	def get(self, sfx):
+		return self.index.get(sfx, [])
+
+def assembly_max_overlap(reads, index, left):
+	max_ln = 0
+	max_i = None
+	max_j = None
+	for i in left:
+		ri = reads[i]
+		sfx = ri[-index.k:]
+		opts = index.get(sfx)
+		for j, p in opts:
+			if i == j:
+				continue
+			rj = reads[j]
+			ln = p + index.k
+			if ri[-ln:] != rj[0:ln]:
+				continue
+			if ln > max_ln:
+				max_ln = ln
+				max_i = i
+				max_j = j
+	return max_ln, max_i, max_j
+
+def assemble(reads, k):
+	reads = list(reads)
+	left = set(range(len(reads)))
+	index = assembly_index(reads, k)
+	ln, i, j = assembly_max_overlap(reads, index, left)
+	while ln > 0:
+		ri = reads[i]
+		rj = reads[j]
+		merged = ri + rj[ln:]
+		index.remove(ri, i)
+		index.remove(rj, j)
+		reads[i] = merged
+		index.add(merged, i)
+		left.remove(j)
+		ln, i, j = assembly_max_overlap(reads, index, left)
+	return "".join(map(lambda x: reads[x], left))
