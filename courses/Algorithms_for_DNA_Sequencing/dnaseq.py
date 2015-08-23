@@ -128,3 +128,98 @@ def boyer_moore_instrumented(p, p_bm, t):
 			shift = max(shift, skip_gs)
 		i += shift
 	return occurrences, comparisons, alignments
+
+def edit_distance(x, y):
+	# Create distance matrix
+	D = []
+	for i in range(len(x)+1):
+		D.append([0]*(len(y)+1))
+
+	# Initialize first row and column of matrix
+	for i in range(len(x)+1):
+		D[i][0] = i
+	for i in range(len(y)+1):
+		D[0][i] = i
+
+	# Fill in the rest of the matrix
+	for i in range(1, len(x)+1):
+		for j in range(1, len(y)+1):
+			distHor = D[i][j-1] + 1
+			distVer = D[i-1][j] + 1
+			if x[i-1] == y[j-1]:
+				distDiag = D[i-1][j-1]
+			else:
+				distDiag = D[i-1][j-1] + 1
+			D[i][j] = min(distHor, distVer, distDiag)
+
+	# Edit distance is the value in the bottom right corner of the matrix
+	return D[-1][-1]
+
+def approximate_match_distance(t, p):
+	# Create distance matrix
+	y = t
+	x = p
+	D = []
+	for i in range(len(x)+1):
+		D.append([0]*(len(y)+1))
+
+	# Initialize first row and column of matrix
+	for i in range(len(x)+1):
+		D[i][0] = i
+	for i in range(len(y)+1):
+		D[0][i] = 0
+
+	# Fill in the rest of the matrix
+	for i in range(1, len(x)+1):
+		for j in range(1, len(y)+1):
+			distHor = D[i][j-1] + 1
+			distVer = D[i-1][j] + 1
+			if x[i-1] == y[j-1]:
+				distDiag = D[i-1][j-1]
+			else:
+				distDiag = D[i-1][j-1] + 1
+			D[i][j] = min(distHor, distVer, distDiag)
+
+	return min(D[-1])
+
+def overlap(a, b, min_length=3):
+	""" Return length of longest suffix of 'a' matching
+		a prefix of 'b' that is at least 'min_length'
+		characters long.  If no such overlap exists,
+		return 0. """
+	start = 0  # start all the way at the left
+	while True:
+		start = a.find(b[:min_length], start)  # look for b's suffx in a
+		if start == -1:  # no more occurrences to right
+			return 0
+		# found occurrence; check for full suffix/prefix match
+		if b.startswith(a[start:]):
+			return len(a)-start
+		start += 1	# move just past previous match
+
+def overlap_graph(reads, k=3):
+	index = {}
+	for i in range(len(reads)):
+		r = reads[i]
+		for p in range(len(r) - k + 1):
+			kmer = r[p:p + k]
+			index.setdefault(kmer, []).append((i, p))
+	graph = []
+	n = 0
+	for i in range(len(reads)):
+		r = reads[i]
+		sfx = r[-k:]
+		opts = index.get(sfx, None)
+		matches = 0
+		if opts is None:
+			continue
+		for j, p in opts:
+			if i == j:
+				continue
+			rj = reads[j]
+			if r[-(p + k):] == rj[0:p + k]:
+				graph.append((r, rj))
+				matches += 1
+		if 0 < matches:
+			n += 1
+	return graph, n
